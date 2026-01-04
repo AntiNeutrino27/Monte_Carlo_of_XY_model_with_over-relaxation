@@ -1,55 +1,16 @@
 #ifndef _PVECTOR_
 #define _PVECTOR_
-// EXERCISE create an efficient vector class in C++ with methods and overloaded operators which you can find in the TODO LIST.
-// TODO LIST:
-// * = TODO, X = done, E = exercise
-// [X] standard constructor/destructor
-// [X] constructor (with overloading->initializer_list)
-// [X] show()
-// [X] overloading of = assignment 
-// [X] overloading of + operator for addition of vectors
-// [X] overloading of - operator for substraction of vectors
-// [X] sum() method to sum two vectors
-// [X] get( ) (get i-th element)
-// [X] set( , ) (set i-th element)
-// [X] overloading of += and -= operators with vectors
-// [X] overloading of * operator for scalar product (vector times vector)
-// [X] norm() norm of vector, implemented by using overloaded operator "*"
-// [X] overloading of * operator for "vector times scalar" product
-// [X] overloading of / operator for "vector divided by scalar" product
-// [X] overloading of *= and /= (with scalars)
-// [X] overloading of operator == (check whether two vectors are equal)
-// [X] overloading of ^ operator for cross product 
-// [X] overloading of (...) operator () to use vector as C arrays, e.g. v(0)=1
-// [X] "scalar times vector" through friend function
-// [X] rint(), i.e. if V is a vector rint(V) is the vector with components rounded to nearest integer
-// [X] mulcw, multiplication element wise: C=mulcw(A,B), i.e. C(i) = A(i)*B(i)
-// [X] divcw, division element wise: C=divcw(A,B), i.e. C(i) = A(i)*B(i)
-// [X] overloading of << for output (friend function)
-//
-// Discuss random number generator class with Mersenne-Twister
-// [X] random(L), random vector inside a box of length L
-// [X] random_orient() random unit on unit sphere (marsaglia) 
 
 #include<iostream> // input/output
 #include<cmath>
 #include<string>
 #include "./randnumgen.hpp"
-// STRATEGIES TO MAKE CLASS GENERIC
-//#define NT 3
-// constexpr tells compiler that NT can be calculated at compile time
-//constexpr int NT=3;
-
-//typedef float ntype; // as in C
-//using ntype=double; // use "using" to define an alias for the keyword "double"
 
 template <typename ntype, int NT>
 class pvector
 {
   ntype v[NT]; // private member
 public:
-  // since assign operator returns pvector objects by reference:
-  // Note this method changes data of object hence it is *not* declared "const"
   pvector& assign( const pvector& P1)
     {
       for (int i=0; i < NT; i++)
@@ -59,20 +20,14 @@ public:
 
   pvector() // void constructor
     {
-      // initialize the vector
       for (int i=0; i < NT; i++)
         v[i]=0;
-      //std::cout << "void constructor\n";
     }
 
   ~pvector() // destructor
     {
-      // nothing to do
-      //std::cout << "void destructor\n";
     }
 
-  // curly brace initialization, i.e.
-  // pvector V={1.0,2.0,3.0};
   pvector(std::initializer_list<ntype> L)  // overloading constructor
     {
       int c=0;
@@ -85,11 +40,10 @@ public:
             }
           c++;
         }
-      for ( ;c < NT; c++) // gli elementi sono in numero di NT allora inizializzo 0
+      for ( ;c < NT; c++) 
         {
           v[c]=0.0;
         }
-      //std::cout << "curly brace constructor\n";
     }
 
   // Note this method does not change data of object hence it is declared "const"
