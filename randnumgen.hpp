@@ -9,12 +9,14 @@ class randnumgen {
   using myclock = std::chrono::high_resolution_clock;
   engine rng;
   using ud = std::uniform_real_distribution<ntype>;
+  using nd = std::normal_distribution<ntype>;
   // we use a pointer here since if a range different from [0,1) is needed
   // we can use the constructor of uniform_real_distribution class 
   // to provide a different range (see randnumgen()) 
   // If a different range is not needed, the default constructor can be used
   // and one can avoid to use a pointer to uniform_real_distribution class
   ud* unidst;
+  nd* nondst;
 public:
   // fixed seed
   void seed(int s)
@@ -38,15 +40,23 @@ public:
       // uniform_real_distribution overloads the parenthesis operator 
       return (*unidst)(rng); 
     } 
+
+  ntype randn()
+  {
+      return (*nondst)(rng);
+  }
+
   randnumgen()
     {
       unidst = new ud(0.0,1.0);
+      nondst = new nd(0.0,1.0);
       // equivalent way to set the range of random numbers:
       // unidst->param(std::uniform_real_distribution<double>::param_type(0.0, 1.0));
     }
   ~randnumgen()
     {
       delete unidst;
+      delete nondst;
     }
 };
 
