@@ -9,13 +9,13 @@ class particle
 public:
   pvector<ntype,2> s;
  
-  void tra_move_metro(pvector<ntype,2> ds)
+  void tra_move_metro(ntype dtheta)
     {
-      s+=ds;
-      s/=norm(s); 
+      s(0)= s(0)*cos(dtheta) - s(1)*sin(dtheta);
+      s(1)= s(0)*sin(dtheta) + s(1)*cos(dtheta);
     }
 
-  void tra_move_rel(pvector<ntype,2> H)
+  void ov_rel_step(pvector<ntype,2> H)
     {
       s-= (2*(s*H)/(H*H))*H;
     }
@@ -33,7 +33,7 @@ public:
   particle()
     {
       theta = rng.ranf()*M_PI;
-      s = {sin(theta), cos(theta)};
+      s = {cos(theta), sin(theta)};
     }
 };
 #endif 
