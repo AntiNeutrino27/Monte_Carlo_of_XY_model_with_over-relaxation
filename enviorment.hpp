@@ -48,6 +48,11 @@ public:
         return L;
     }
 
+    int get_N()
+    {
+        return L*L*L;
+    }
+
     // calculate local field at site index
     pvector<ntype, 2> calc_H(int index)
     {  
@@ -123,8 +128,9 @@ public:
         }
     }
 
-    void metropolis_sweep(ntype Temp, ntype d_theta_max)
+    long int metropolis_sweep(ntype Temp, ntype d_theta_max)
     {
+        long int rej_count = 0;
         ntype beta = 1.0/Temp;
         int N = L*L*L;
         for(int i=0; i<N; i++)
@@ -135,14 +141,16 @@ public:
 
             // calculate energy difference
             ntype enn = energy_particle(i);
-            ntype delu= enn-eno;
+            ntype delu = enn-eno;
             ntype xi = rng.ranf();
             if (delu > 0.0 && xi >= exp(-beta*delu))
             {
                 // reject move
                 parts[i].restore(); 
+                rej_count++;
             }
         }
+        return rej_count;
     }
 };
 

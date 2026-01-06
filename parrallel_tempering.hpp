@@ -10,13 +10,12 @@
 template<typename ntype, typename model_type>
 class ModelPT
 {
-private:
+public:
     ntype T_min, T_max;
     int N_T;
     std::vector<ntype> temperatures;
     std::vector<model_type> replicas;
     std::vector<ntype> thetas;
-public:
     ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox): T_min(T_min), T_max(T_max), N_T(N_T)
     {
         temperatures.resize(N_T);
@@ -55,11 +54,14 @@ public:
         }
     }
 
-    void metropolis_sweep()
+    std::vector<long int> metropolis_sweep()
     {
+        std::vector<int> rej_counts;
+        rej_counts.resize(N_T);
         for(int i=0; i<N_T; i++){
-            replicas[i].metropolis_sweep(temperatures[i], thetas[i]);
+            rej_counts[i] = replicas[i].metropolis_sweep(temperatures[i], thetas[i]);
         }
+        return rej_counts;
     }
 
     void pt_sweep()
