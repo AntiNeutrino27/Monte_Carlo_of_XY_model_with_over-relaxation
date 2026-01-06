@@ -32,7 +32,7 @@ public:
 
   particle()
     {
-      theta = rng.ranf()*M_PI;
+      ntype theta = rng.ranf()*M_PI;
       s = {cos(theta), sin(theta)};
     }
 };
