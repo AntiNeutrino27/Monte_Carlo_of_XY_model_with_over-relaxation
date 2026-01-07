@@ -10,6 +10,10 @@ class XYmodel
 {
 private:
     int L;
+    int mod(int a, int b)
+    {
+        return (a % b + b) % b;
+    }
 public:
     std::vector<particle<ntype>> parts; // particles
     std::vector<pvector<ntype,3>> J; // couplings for each particle to + direction
@@ -30,16 +34,15 @@ public:
     int d3_d1(int ix, int iy, int iz)
     {
         // for PBC
-        ix%=L;
-        iy%=L;
-        iz%=L;
-
+        ix = mod(ix, L);
+        iy = mod(iy, L);
+        iz = mod(iz, L);
         return ix + L*iy + L*L*iz;
     }
 
     std::array<int,3> d1_3d(int index)
     {
-        index%= (L*L*L);
+        index = mod(index, L*L*L);
         int iz = index/(L*L);
         int iy = (index - iz*L*L)/L;
         int ix = index - iz*L*L - iy*L;
@@ -64,7 +67,7 @@ public:
         pvector<ntype,2> H = {0.0, 0.0};
 
         pvector<ntype,2> sxn = parts[d3_d1(ix-1, iy, iz)].s;
-        ntype Jxn = J[d3_d1(ix-1, iy, iz)].get(0);
+        ntype Jxn = J[d3_d1(ix-1, iy, iz)].get(0);        
 
         pvector<ntype,2> sxp = parts[d3_d1(ix+1, iy, iz)].s;
         ntype Jxp = J[index].get(0);
@@ -93,7 +96,7 @@ public:
     ntype energy_particle(int index)
     {
         pvector<ntype,2> H = calc_H(index);
-        ntype e = - (parts[index].s)*H;
+        ntype e = -1.0 * (parts[index].s)*H;
         return e;
     }
 
@@ -130,6 +133,7 @@ public:
             parts[i].ov_rel_step(H);
             parts[i].store();
         }
+
     }
 
     long int metropolis_sweep(ntype Temp, ntype d_theta_max)
@@ -141,7 +145,7 @@ public:
         {   
             ntype eno = energy_particle(i);
             ntype dtheta = rng.ranf()*d_theta_max - d_theta_max/2.0;
-            parts[i].tra_move(dtheta);
+            parts[i].tra_move_metro(dtheta);
 
             // calculate energy difference
             ntype enn = energy_particle(i);

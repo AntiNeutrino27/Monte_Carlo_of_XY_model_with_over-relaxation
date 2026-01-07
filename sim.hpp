@@ -179,41 +179,43 @@ class mcsim: public sim<ntype, model_type>
 
   void run(void) 
   {
-      // // loop over MC steps
-      // int i, t, ip;
-      // ntype iv;
-      // tot_tra = 0;
-      // restore_rej_count();
-      // init_measures();
-      // for (t = 0; t < pars.totsteps; t++)
-      //   {
-      //     PT_model.over_relaxation_sweep();
-      //     if (t % pars.mc_p == 0)
-      //       {
-      //         std::vector<long int> loc_rej_counts(PT_model.N_T);
-      //         loc_rej_counts = PT_model.metropolis_sweep();
-      //         PT_model.pt_sweep();
-      //         tot_tra += PT_model.replicas[ip].get_N();
-      //         add_rej_counts(loc_rej_counts);
-      //       }
+      // loop over MC steps
+      int i, t, ip;
+      ntype iv;
+      tot_tra = 0;
+      std::cout << "Starting MC simulation with Parallel Tempering...\n";
+      restore_rej_count();
+      std::cout << "Preparing initial measures...\n";
+      init_measures();
+      std::cout << "Running simulation...\n";
+      std::cout << pars.totsteps << " MC steps to be performed.\n";
+      for (t = 0; t < pars.totsteps; t++)
+      {
+        PT_model.over_relaxation_sweep();
+        if (t % pars.mc_step == 0)
+        {
+          std::vector<long int> loc_rej_counts(PT_model.N_T);
+          loc_rej_counts = PT_model.metropolis_sweep();
+          PT_model.pt_sweep();
+          tot_tra += PT_model.replicas[0].get_N();
+          add_rej_counts(loc_rej_counts);
+        }
   
-      //     if (t > 0 && pars.savemeasure > 0 && t % pars.savemeasure == 0)
-      //       {
-      //         save_measures(t);
-      //       }
+        //   // if (t > 0 && pars.savemeasure > 0 && t % pars.savemeasure == 0)
+        //   //   {
+        //   //     save_measures(t);
+        //   //   }
 
-      //     if (t > 0 && pars.save_mgl_snapshot > 0 && 
-      //         t % pars.save_mgl_snapshot == 0)
-      //       {
-      //         save_mgl_snapshot(t);
-      //       }
+        if (t > 0 && pars.save_mgl_snapshot > 0 && t % pars.save_mgl_snapshot == 0)
+        {
+          save_mgl_snapshot(t);
+        }
 
-      //     if (t > 0 && pars.adjstps > 0 && t % pars.adjstps == 0 && 
-      //         t < pars.maxadjstps)
-      //       {
-      //         calc_acceptance_and_adjust();
-      //       }
-      //   }
+        // if (t > 0 && pars.adjstps > 0 && t % pars.adjstps == 0 && t < pars.maxadjstps)
+        // {
+        //   calc_acceptance_and_adjust();
+        // }
+      }
   } 
 };
 #endif

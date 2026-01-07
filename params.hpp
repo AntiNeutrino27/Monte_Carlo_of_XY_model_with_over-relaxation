@@ -22,12 +22,19 @@ public:
     {
       std::ifstream ri;
       path = "simulations/simulation1";
-      totsteps = 409600*2;
-      mc_step = 10;
+      // totsteps = 409600*2;
+      totsteps = 10;
+      save_mgl_snapshot = 2;
+      mc_step = 2;
       T_min = 0.265;
       T_max = 0.45;
       N_T = 35;
       L = 24;
+      seed = 1;
+      // save_mgl_snapshot = 20;
+      // maxadjstps, eqstps, adjstps = 100, 100, 100;
+
+
     }
 };
 #endif

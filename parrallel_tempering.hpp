@@ -39,7 +39,7 @@ public:
         }
 
         // Initialize replicas
-        model_type model1 = model_type(Lbox);
+        model_type model1(Lbox);
         replicas[0] = model1;
         for(int i=1; i<N_T; i++){
             replicas[i] = model1.make_replica();
