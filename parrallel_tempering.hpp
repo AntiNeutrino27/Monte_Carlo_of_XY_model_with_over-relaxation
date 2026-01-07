@@ -16,8 +16,19 @@ public:
     std::vector<ntype> temperatures;
     std::vector<model_type> replicas;
     std::vector<ntype> thetas;
-    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox): T_min(T_min), T_max(T_max), N_T(N_T)
+
+    ModelPT() = default;
+
+    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox)
     {
+        init(T_min, T_max, N_T_, Lbox);
+    }
+
+    void init(ntype T_min_, ntype T_max_, int N_T_, int Lbox)
+    {
+        T_min = T_min_;
+        T_max = T_max_;
+        N_T = N_T_;
         temperatures.resize(N_T);
         replicas.resize(N_T);
         thetas.resize(N_T);
@@ -28,17 +39,17 @@ public:
         }
 
         // Initialize replicas
-        model1 = model_type(Lbox);
+        model_type model1 = model_type(Lbox);
         replicas[0] = model1;
         for(int i=1; i<N_T; i++){
             replicas[i] = model1.make_replica();
         }
     }
 
-    ModelPT<ntype> make_copy() const
+    ModelPT<ntype, model_type> make_copy() const
     {  
         int Lbox = replicas[0].get_L();
-        ModelPT<ntype> copy(T_min, T_max, N_T, Lbox);
+        ModelPT<ntype, model_type> copy(T_min, T_max, N_T, Lbox);
 
         // copying bonds
         for(int i=0; i<N_T; i++){
@@ -56,7 +67,7 @@ public:
 
     std::vector<long int> metropolis_sweep()
     {
-        std::vector<int> rej_counts;
+        std::vector<long int> rej_counts;
         rej_counts.resize(N_T);
         for(int i=0; i<N_T; i++){
             rej_counts[i] = replicas[i].metropolis_sweep(temperatures[i], thetas[i]);

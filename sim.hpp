@@ -4,12 +4,15 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <filesystem>
 #include "./params.hpp"
 #include "./particle.hpp"
 #include "./randnumgen.hpp"
-#include "./enviorment.hpp"
 #include "./parrallel_tempering.hpp"
 #include <iomanip> // for setprecision()
+#include <iostream>
+
+namespace fs = std::filesystem;
 
 template<typename ntype, typename model_type>
 class sim
@@ -17,7 +20,7 @@ class sim
   using simp = simpars<ntype>;
 protected:
   simp pars;  // parameters of the simulation
-  ModelPT<ntype, model_type> PT_model;
+  ModelPT<ntype, model_type> PT_model; // parallel tempering model
 
   void save_mgl_snapshot(long int t) 
   {
@@ -34,6 +37,16 @@ protected:
       }
       f.close();
     }
+  }
+
+  bool create_dir(std::string dir)
+  {
+    std::error_code ec;
+
+    if (fs::exists(dir, ec))
+      return fs::is_directory(dir, ec);
+
+    return fs::create_directories(dir, ec);
   }
  
 public:
@@ -56,20 +69,20 @@ public:
     }; 
 };
 
-template<typename ntype, typename particle_type>
-class mcsim: public sim<ntype, particle_type>
+template<typename ntype, typename model_type>
+class mcsim: public sim<ntype, model_type>
 {
   // for calc_acceptance_and_adjust: total trial moves and accepted ones
   // for calculating acceptance rates.
-  using bc=sim<ntype, particle_type>;
-  using bc::PT_model, bc::pars, bc::save_mgl_snapshot;
+  using bc=sim<ntype, model_type>;
+  using bc::PT_model, bc::pars, bc::save_mgl_snapshot, bc::create_dir;
   
   // counters used to calculate acceptance rates
   long int tot_tra;
   std::vector<long int> rej_counts;
 
   void calc_acceptance_and_adjust(void)
-    {
+  {
       for(int i=0; i<PT_model.N_T; i++)
       {
         ntype acc_rate = 1.0 - ((ntype)rej_counts[i])/((ntype)tot_tra);
@@ -84,7 +97,7 @@ class mcsim: public sim<ntype, particle_type>
       }
       restore_rej_count();
       tot_tra = 0;
-    }
+  }
 
   void init_measures(void)
   {
@@ -121,7 +134,7 @@ class mcsim: public sim<ntype, particle_type>
 
   void restore_rej_count()
   {
-      for(int i=0; i<PT_model.N_T; i++)
+      for(int i=0; i<pars.N_T; i++)
       {
         rej_counts[i] = 0;
       }
@@ -135,50 +148,72 @@ class mcsim: public sim<ntype, particle_type>
       }
   }
 
+  bool create_save_dir()
+  {
+    return create_dir(pars.path);
+  }
+
+  bool create_temp_dirs()
+  {
+    std::string base_dir = pars.path;
+    int N_T = pars.N_T;
+    for (int i=0; i<N_T; i++)
+    {
+      std::string temp_dir = base_dir + "/temp_" + std::to_string(i);
+      if (!create_dir(temp_dir))
+        return false;
+    }
+    return true;
+  }
+
  public:
   void prepare_initial_conf(void) 
   {
-    rej_counts.resize(PT_model.N_T);
+    PT_model.init(pars.T_min, pars.T_max, pars.N_T, pars.L);
+    create_save_dir();
+    create_temp_dirs();
+
+    rej_counts.resize(pars.N_T);
     restore_rej_count();
   }
 
   void run(void) 
   {
-      // loop over MC steps
-      int i, t, ip;
-      ntype iv;
-      tot_tra = 0;
-      restore_rej_count();
-      init_measures();
-      for (t = 0; t < pars.totsteps; t++)
-        {
-          PT_model.over_relaxation_sweep();
-          if (t % pars.mc_p == 0)
-            {
-              std::vector<long int> loc_rej_counts(PT_model.N_T);
-              loc_rej_counts = PT_model.metropolis_sweep();
-              PT_model.pt_sweep();
-              tot_tra += PT_model.replicas[ip].get_N();
-              add_rej_counts(loc_rej_counts);
-            }
+      // // loop over MC steps
+      // int i, t, ip;
+      // ntype iv;
+      // tot_tra = 0;
+      // restore_rej_count();
+      // init_measures();
+      // for (t = 0; t < pars.totsteps; t++)
+      //   {
+      //     PT_model.over_relaxation_sweep();
+      //     if (t % pars.mc_p == 0)
+      //       {
+      //         std::vector<long int> loc_rej_counts(PT_model.N_T);
+      //         loc_rej_counts = PT_model.metropolis_sweep();
+      //         PT_model.pt_sweep();
+      //         tot_tra += PT_model.replicas[ip].get_N();
+      //         add_rej_counts(loc_rej_counts);
+      //       }
   
-          if (t > 0 && pars.savemeasure > 0 && t % pars.savemeasure == 0)
-            {
-              save_measures(t);
-            }
+      //     if (t > 0 && pars.savemeasure > 0 && t % pars.savemeasure == 0)
+      //       {
+      //         save_measures(t);
+      //       }
 
-          if (t > 0 && pars.save_mgl_snapshot > 0 && 
-              t % pars.save_mgl_snapshot == 0)
-            {
-              save_mgl_snapshot(t);
-            }
+      //     if (t > 0 && pars.save_mgl_snapshot > 0 && 
+      //         t % pars.save_mgl_snapshot == 0)
+      //       {
+      //         save_mgl_snapshot(t);
+      //       }
 
-          if (t > 0 && pars.adjstps > 0 && t % pars.adjstps == 0 && 
-              t < pars.maxadjstps)
-            {
-              calc_acceptance_and_adjust();
-            }
-        }
+      //     if (t > 0 && pars.adjstps > 0 && t % pars.adjstps == 0 && 
+      //         t < pars.maxadjstps)
+      //       {
+      //         calc_acceptance_and_adjust();
+      //       }
+      //   }
   } 
 };
 #endif

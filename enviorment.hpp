@@ -11,8 +11,11 @@ class XYmodel
 private:
     int L;
 public:
- std::vector<particle<ntype>> parts; // particles
- std::vector<pvector<ntype,3>> J; // couplings for each particle to + direction
+    std::vector<particle<ntype>> parts; // particles
+    std::vector<pvector<ntype,3>> J; // couplings for each particle to + direction
+
+    XYmodel() = default;
+
     XYmodel(int Lbox): L(Lbox)
     {
         int N = L*L*L;
@@ -112,7 +115,8 @@ public:
         replica.J = J;
 
         // Reinitialize spins
-        for (int i = 0; i < N; ++i)
+        int N = L*L*L;
+        for (int i = 0; i < N; i++)
             replica.parts[i] = particle<ntype>();
 
         return replica;
