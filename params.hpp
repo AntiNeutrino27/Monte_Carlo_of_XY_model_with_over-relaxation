@@ -6,15 +6,12 @@ template<typename ntype>
 class simpars
 {
 public:
-  int nx, ny, nz; /* nx*ny*nz particelle */
-  double T, P; // temperature and pressure
-  int Np; // numero di particelle
+  ntype T_min, T_max; // temperature and pressure
+  int N_T; // number of temperatures in PT
   long int maxadjstps, eqstps, adjstps, save_mgl_snapshot;
   long int savemeasure, outstps, totsteps, mc_step; // savemeasure=steps at which save measures, totsteps = simulations steps, outstps steps print something on current simulation status
-  double rho, rc; // density
-  int simtype; // simulation type (see below)
   int seed; // -1 means random
-  pvector<double, 3> L; // box
+  int L; // box size
   double sigma, epsilon, mass; // Lennard-Jones parameters
   double dt, deltra, vmax; // parameter of MC moves
 
@@ -27,6 +24,10 @@ public:
       path = "simulations/simulation1";
       totsteps = 409600*2;
       mc_step = 10;
+      T_min = 0.265;
+      T_max = 0.45;
+      N_T = 35;
+      L = 24;
     }
 };
 #endif
