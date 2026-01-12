@@ -19,12 +19,12 @@ public:
 
     ModelPT() = default;
 
-    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox)
+    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox, float theta_max=0.1)
     {
-        init(T_min, T_max, N_T_, Lbox);
+        init(T_min, T_max, N_T_, Lbox, theta_max);
     }
 
-    void init(ntype T_min_, ntype T_max_, int N_T_, int Lbox)
+    void init(ntype T_min_, ntype T_max_, int N_T_, int Lbox, float theta_max)
     {
         T_min = T_min_;
         T_max = T_max_;
@@ -36,6 +36,7 @@ public:
         // Initialize temperatures with geometric spacing
         for(int i=0; i<N_T; i++){
             temperatures[i] = T_min * pow(T_max/T_min, ntype(i)/(N_T-1.0));
+            thetas[i] = theta_max;
         }
 
         // Initialize replicas
@@ -75,8 +76,10 @@ public:
         return rej_counts;
     }
 
-    void pt_sweep()
+    std::vector<long int> pt_sweep()
     {
+        std::vector<long int> rej_counts;
+        rej_counts.resize(N_T);
         for(int i=0; i<N_T-1; i++){
             ntype E1 = replicas[i].total_energy();
             ntype E2 = replicas[i+1].total_energy();
@@ -85,8 +88,12 @@ public:
             ntype xi = rng.ranf();
             if(delta < 0.0 || xi < exp(-delta)){
                 std::swap(replicas[i], replicas[i+1]);
+                rej_counts[i] = 0;
+            } else {
+                rej_counts[i] = 1;
             }
         }
+        return rej_counts;
     }
 };
 

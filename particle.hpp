@@ -13,11 +13,13 @@ public:
     {
       s(0)= s(0)*cos(dtheta) - s(1)*sin(dtheta);
       s(1)= s(0)*sin(dtheta) + s(1)*cos(dtheta);
+      s /= s.norm();
     }
 
   void ov_rel_step(pvector<ntype,2> H)
     {
       s-= (2*(s*H)/(H*H))*H;
+      s /= s.norm();
     }
 
   void store()
@@ -32,7 +34,7 @@ public:
 
   particle()
     {
-      ntype theta = rng.ranf()*M_PI;
+      ntype theta = 2.*rng.ranf()*M_PI;
       s = {cos(theta), sin(theta)};
     }
 };

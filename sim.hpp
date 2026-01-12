@@ -78,15 +78,15 @@ class mcsim: public sim<ntype, model_type>
   using bc::PT_model, bc::pars, bc::save_mgl_snapshot, bc::create_dir;
   
   // counters used to calculate acceptance rates
-  long int tot_tra;
-  std::vector<long int> rej_counts;
+  long int tot_met, tot_PT;
+  std::vector<long int> rej_counts_met, rej_counts_PT;
 
   void calc_acceptance_and_adjust(void)
   {
       for(int i=0; i<PT_model.N_T; i++)
       {
-        ntype acc_rate = 1.0 - ((ntype)rej_counts[i])/((ntype)tot_tra);
-        if(acc_rate > 0.5)
+        ntype acc_rate = 1.0 - ((ntype)rej_counts_met[i])/((ntype)tot_met);
+        if(acc_rate > 0.5 && PT_model.thetas[i]*1.1 < 2. * M_PI)
         {
           PT_model.thetas[i] *= 1.1;
         }
@@ -95,57 +95,118 @@ class mcsim: public sim<ntype, model_type>
           PT_model.thetas[i] /= 1.1;
         }
       }
-      restore_rej_count();
-      tot_tra = 0;
+      restore_rej_count(1);
+      tot_met = 0;
   }
 
   void init_measures(void)
   {
-      // // open files in writing mode to truncate them to 0
-      // std::fstream f;
-      // f.open("energy.dat", std::ios::out|std::ios::trunc);
-      // f.close();
-      // if (pars.simtype==1) // simtype == 1 means an NPT simluations
-      //   {
-      //     std::fstream f;
-      //     f.open("density.dat", std::ios::out|std::ios::trunc);
-      //     f.close();
-      //   }
+    for(int i=0; i<PT_model.N_T; i++)
+    {
+      std::string s;
+      s = pars.path + "/temp_" + std::to_string(i) + "/energy.dat";
+      std::fstream f;
+      f.open(s,  std::ios::out|std::ios::trunc);
+      f.close();
+    }
 
-      // // init your own measures here
+    for(int i=0; i<PT_model.N_T; i++)
+    {
+      std::string s;
+      s = pars.path + "/temp_" + std::to_string(i) + "/theta.dat";
+      std::fstream f;
+      f.open(s,  std::ios::out|std::ios::trunc);
+      f.close();
+    }
+
+    for(int i=0; i<PT_model.N_T; i++)
+    {
+      std::string s;
+      s = pars.path + "/temp_" + std::to_string(i) + "/PT_acc_rate.dat";
+      std::fstream f;
+      f.open(s,  std::ios::out|std::ios::trunc);
+      f.close();
+    }
+
   }
 
  void save_measures(long int t)
   {
-      // std::fstream f;
-      // f.open("energy.dat", std::ios::out|std::ios::app);
-      // // save potential energy per particle
-      // f << t << " " << totenergy()/pars.Np << "\n";
-      // f.close();
-      // if (pars.simtype==1) // 1 means NPT simulation, save density in this case
-      //   {
-      //     f.open("density.dat", std::ios::out|std::ios::app);
-      //     // save potential energy per particle
-      //     f << t << " " << pars.Np/(pars.L(0)*pars.L(1)*pars.L(2)) << "\n";
-      //     f.close();
-      //   }
-      // // you can add your own measures here
+    for (int i=0; i<PT_model.N_T; i++)
+    {
+      model_type model = PT_model.replicas[i];
+      ntype totenergy = model.total_energy();
+      std::fstream f;
+      std::string s;
+      s = pars.path + "/temp_" + std::to_string(i) + "/energy.dat";
+      f.open(s, std::ios::out|std::ios::app);
+      // save potential energy per particle
+      f << t << " " << totenergy << "\n";
+      f.close();
+    }
+
+    for (int i=0; i<PT_model.N_T; i++)
+    {
+      ntype theta = PT_model.thetas[i];
+      std::fstream f;
+      std::string s;
+      s = pars.path + "/temp_" + std::to_string(i) + "/theta.dat";
+      f.open(s, std::ios::out|std::ios::app);
+      // save potential energy per particle
+      f << t << " " << theta << "\n";
+      f.close();
+    }
+
+    for (int i=0; i<PT_model.N_T; i++)
+    {
+      ntype acc_rate = 1.0 - ((ntype)rej_counts_PT[i])/((ntype)tot_PT);
+      std::fstream f;
+      std::string s;
+      s = pars.path + "/temp_" + std::to_string(i) + "/PT_acc_rate.dat";
+      f.open(s, std::ios::out|std::ios::app);
+      // save potential energy per particle
+      f << t << " " << acc_rate << "\n";
+      f.close();
+    }
+    restore_rej_count(2);
+    tot_PT = 0;
+
   }
 
-  void restore_rej_count()
+  void restore_rej_count(int s) // if s=1 reset metropolis swap counts, if s=2 reset PT counts
   {
+    if (s == 1)
+    {
       for(int i=0; i<pars.N_T; i++)
       {
-        rej_counts[i] = 0;
+        rej_counts_met[i] = 0;
       }
+    } 
+    else if (s == 2)
+    {
+      for(int i=0; i<pars.N_T; i++)
+      {
+        rej_counts_PT[i] = 0;
+      }
+    }
+      
   }
 
-  void add_rej_counts(std::vector<long int> loc_rej_counts)
+  void add_rej_counts(std::vector<long int> loc_rej_counts, int s)
   {
+    if (s == 1)
+    {
       for(int i=0; i<PT_model.N_T; i++)
       {
-        rej_counts[i] += loc_rej_counts[i];
+        rej_counts_met[i] += loc_rej_counts[i];
       }
+    } else if (s == 2)
+    {
+      for(int i=0; i<PT_model.N_T; i++)
+      {
+        rej_counts_PT[i] += loc_rej_counts[i];
+      }
+    }
   }
 
   bool create_save_dir()
@@ -166,25 +227,58 @@ class mcsim: public sim<ntype, model_type>
     return true;
   }
 
+  bool write_readme()
+  {
+    std::string filename = pars.path + "/README.txt";
+    std::fstream f;
+    f.open(filename, std::ios::out|std::ios::trunc);
+    if (!f.is_open())
+      return false; 
+    f << "Parameters of the simulation:\n";
+    f << "-----------------------------------\n";
+    f << "date and time: " << __DATE__ << " " << __TIME__ << "\n";
+    f << "Box size: " << pars.L << "\n";
+    f << "Number of particles per replica: " << PT_model.replicas[0].get_N() << "\n";
+    f << "Initial maximum angle for trial moves in metropolis: " << pars.theta_max << "\n";
+    f << "Number of temperatures: " << pars.N_T << "\n";
+    f << "Temperature range: " << pars.T_min << " to " << pars.T_max << "\n";
+    f << "Number of MC steps: " << pars.totsteps << "\n";
+    f << "MC steps period: " << pars.mc_step << "\n";
+    f << "Save MGL snapshot every: " << pars.save_mgl_snapshot << "\n";
+    f << "Save measures every: " << pars.savemeasure << "\n";
+    f << "Adjust steps every: " << pars.adjstps << "\n";
+    f << "Maximum adjustment steps: " << pars.maxadjstps << "\n";
+    f << "Random seed: " << pars.seed << "\n";
+    f << "-----------------------------------\n";
+
+    f.close();
+    return true;
+  }
+
  public:
   void prepare_initial_conf(void) 
   {
-    PT_model.init(pars.T_min, pars.T_max, pars.N_T, pars.L);
+    PT_model.init(pars.T_min, pars.T_max, pars.N_T, pars.L, pars.theta_max);
     create_save_dir();
+    write_readme();
     create_temp_dirs();
 
-    rej_counts.resize(pars.N_T);
-    restore_rej_count();
+    rej_counts_met.resize(pars.N_T);
+    rej_counts_PT.resize(pars.N_T);
+    restore_rej_count(1);
+    restore_rej_count(2);
   }
 
   void run(void) 
   {
       // loop over MC steps
-      int i, t, ip;
-      ntype iv;
-      tot_tra = 0;
+      int t;
+      int step = 500;
+      tot_met = 0;
+      tot_PT = 0;
       std::cout << "Starting MC simulation with Parallel Tempering...\n";
-      restore_rej_count();
+      restore_rej_count(1);
+      restore_rej_count(2);
       std::cout << "Preparing initial measures...\n";
       init_measures();
       std::cout << "Running simulation...\n";
@@ -194,27 +288,30 @@ class mcsim: public sim<ntype, model_type>
         PT_model.over_relaxation_sweep();
         if (t % pars.mc_step == 0)
         {
-          std::vector<long int> loc_rej_counts(PT_model.N_T);
-          loc_rej_counts = PT_model.metropolis_sweep();
-          PT_model.pt_sweep();
-          tot_tra += PT_model.replicas[0].get_N();
-          add_rej_counts(loc_rej_counts);
+          std::vector<long int> loc_rej_counts_met(PT_model.N_T);
+          std::vector<long int> loc_rej_counts_PT(PT_model.N_T);
+          loc_rej_counts_met = PT_model.metropolis_sweep();
+          loc_rej_counts_PT = PT_model.pt_sweep();
+          tot_met += PT_model.replicas[0].get_N();
+          tot_PT += 1;
+          add_rej_counts(loc_rej_counts_met, 1);
+          add_rej_counts(loc_rej_counts_PT, 2);
         }
   
-        //   // if (t > 0 && pars.savemeasure > 0 && t % pars.savemeasure == 0)
-        //   //   {
-        //   //     save_measures(t);
-        //   //   }
+        if (t > 0 && pars.savemeasure > 0 && t % pars.savemeasure == 0)
+        {
+          save_measures(t);
+        }
 
         if (t > 0 && pars.save_mgl_snapshot > 0 && t % pars.save_mgl_snapshot == 0)
         {
           save_mgl_snapshot(t);
         }
 
-        // if (t > 0 && pars.adjstps > 0 && t % pars.adjstps == 0 && t < pars.maxadjstps)
-        // {
-        //   calc_acceptance_and_adjust();
-        // }
+        if (t > 0 && pars.adjstps > 0 && t % pars.adjstps == 0 && t < pars.maxadjstps)
+        {
+          calc_acceptance_and_adjust();
+        }
       }
   } 
 };
