@@ -86,11 +86,13 @@ public:
             ntype dBeta = 1.0/temperatures[i+1] - 1.0/temperatures[i];
             ntype delta = (E2 - E1) * dBeta;
             ntype xi = rng.ranf();
-            if(delta < 0.0 || xi < exp(-delta)){
+            if(delta < 0.0 && xi >= exp(delta)){
+                rej_counts[i] = 1;
+            } 
+            else
+            {
                 std::swap(replicas[i], replicas[i+1]);
                 rej_counts[i] = 0;
-            } else {
-                rej_counts[i] = 1;
             }
         }
         return rej_counts;
