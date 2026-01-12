@@ -32,7 +32,7 @@ public:
       maxadjstps = totsteps;
       adjstps = 2000;
       savemeasure = 100;
-      theta_max = 3.14159265359 * 0.05;
+      theta_max = 3.14159265359 * 0.2;
     }
 };
 #endif
