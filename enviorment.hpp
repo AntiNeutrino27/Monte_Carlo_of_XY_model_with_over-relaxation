@@ -3,6 +3,7 @@
 
 #include "./pvector.hpp"
 #include "./particle.hpp"
+#include <stdexcept>
 #include <vector>
 
 template<typename ntype>
@@ -156,6 +157,11 @@ public:
                 // reject move
                 parts[i].restore(); 
                 rej_count++;
+            } 
+            else
+            {
+                // accept move
+                parts[i].store();
             }
         }
         return rej_count;

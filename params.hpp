@@ -13,6 +13,7 @@ public:
   int seed; // -1 means random
   int L; // box size
   ntype theta_max; // initial maximum angle for trial moves in metropolis
+  bool use_or, use_pt; // use overrelaxation and parallel tempering
 
 
   std::string path; // path to save data 
@@ -20,19 +21,21 @@ public:
   simpars()
     {
       std::ifstream ri;
-      path = "simulations/simulation1";
+      path = "simulations/simulation4";
       totsteps = 409600*2;
       save_mgl_snapshot = 100;
-      mc_step = 10;
-      T_min = 0.265;
-      T_max = 0.45;
-      N_T = 35;
-      L = 24;
-      seed = 1;
+      mc_step = 1;
+      T_min = 0.2;
+      T_max = 1.4;
+      N_T = 27;
+      L = 8;
+      seed = -1;
       maxadjstps = totsteps;
-      adjstps = 2000;
+      adjstps = 5000;
       savemeasure = 100;
-      theta_max = 3.14159265359 * 0.2;
+      theta_max = 3.14159265359 * 1./180.;
+      use_or = false;
+      use_pt = false;
     }
 };
 #endif

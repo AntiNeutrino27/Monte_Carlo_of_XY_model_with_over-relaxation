@@ -32,10 +32,16 @@ public:
       s = sold;
     }
 
+  void show_old()
+    {
+      std::cout << "sold=(" << sold.get(0) << "," << sold.get(1) << ")\n";
+    }
+
   particle()
     {
       ntype theta = 2.*rng.ranf()*M_PI;
       s = {cos(theta), sin(theta)};
+      store();
     }
 };
 #endif 

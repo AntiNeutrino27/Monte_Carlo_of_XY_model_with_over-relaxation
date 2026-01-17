@@ -86,7 +86,7 @@ class mcsim: public sim<ntype, model_type>
       for(int i=0; i<PT_model.N_T; i++)
       {
         ntype acc_rate = 1.0 - ((ntype)rej_counts_met[i])/((ntype)tot_met);
-        if(acc_rate > 0.5 && PT_model.thetas[i]*1.1 < 2. * M_PI)
+        if(acc_rate > 0.5 && PT_model.thetas[i]*1.1 < M_PI/2.)
         {
           PT_model.thetas[i] *= 1.1;
         }
@@ -118,6 +118,9 @@ class mcsim: public sim<ntype, model_type>
       f.open(s,  std::ios::out|std::ios::trunc);
       f.close();
     }
+
+    if (!pars.use_pt)
+      return;
 
     for(int i=0; i<PT_model.N_T; i++)
     {
@@ -156,6 +159,9 @@ class mcsim: public sim<ntype, model_type>
       f << t << " " << theta << "\n";
       f.close();
     }
+
+    if (!pars.use_pt)
+      return;
 
     for (int i=0; i<PT_model.N_T; i++)
     {
@@ -239,7 +245,9 @@ class mcsim: public sim<ntype, model_type>
     f << "date and time: " << __DATE__ << " " << __TIME__ << "\n";
     f << "Box size: " << pars.L << "\n";
     f << "Number of particles per replica: " << PT_model.replicas[0].get_N() << "\n";
+    f << "Use overrelaxation: " << (pars.use_or ? "yes" : "no") << "\n";
     f << "Initial maximum angle for trial moves in metropolis: " << pars.theta_max << "\n";
+    f << "Use parallel tempering: " << (pars.use_pt ? "yes" : "no") << "\n";
     f << "Number of temperatures: " << pars.N_T << "\n";
     f << "Temperature range: " << pars.T_min << " to " << pars.T_max << "\n";
     f << "Number of MC steps: " << pars.totsteps << "\n";
@@ -258,6 +266,11 @@ class mcsim: public sim<ntype, model_type>
  public:
   void prepare_initial_conf(void) 
   {
+    if(!pars.use_pt)
+    {
+      pars.T_max = pars.T_min;
+      pars.N_T = 1;
+    }
     PT_model.init(pars.T_min, pars.T_max, pars.N_T, pars.L, pars.theta_max);
     create_save_dir();
     write_readme();
@@ -285,13 +298,16 @@ class mcsim: public sim<ntype, model_type>
       std::cout << pars.totsteps << " MC steps to be performed.\n";
       for (t = 0; t < pars.totsteps; t++)
       {
-        PT_model.over_relaxation_sweep();
+        if(pars.use_or && t % 10 == 0)
+          PT_model.over_relaxation_sweep();
+
         if (t % pars.mc_step == 0)
         {
           std::vector<long int> loc_rej_counts_met(PT_model.N_T);
           std::vector<long int> loc_rej_counts_PT(PT_model.N_T);
           loc_rej_counts_met = PT_model.metropolis_sweep();
-          loc_rej_counts_PT = PT_model.pt_sweep();
+          if(pars.use_pt)
+            loc_rej_counts_PT = PT_model.pt_sweep();
           tot_met += PT_model.replicas[0].get_N();
           tot_PT += 1;
           add_rej_counts(loc_rej_counts_met, 1);
