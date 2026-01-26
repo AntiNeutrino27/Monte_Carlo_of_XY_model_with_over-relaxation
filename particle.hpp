@@ -18,7 +18,7 @@ public:
 
   void ov_rel_step(pvector<ntype,2> H)
     {
-      s-= (2*(s*H)/(H*H))*H;
+      s= (2*(s*H)/(H*H))*H - s;
       s /= s.norm();
     }
 
