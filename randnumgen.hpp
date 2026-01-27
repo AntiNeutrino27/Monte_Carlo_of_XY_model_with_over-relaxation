@@ -66,5 +66,5 @@ public:
 // rng.rseed();        : random seeding 
 // rng.ranf();         : generate a random number in [0.0,1.0)
 
-randnumgen<double,std::mt19937_64> rng;
+// randnumgen<double,std::mt19937_64> rng;
 #endif

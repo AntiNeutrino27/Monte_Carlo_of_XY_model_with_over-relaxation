@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
+
 template<typename ntype>
 class XYmodel
 {
@@ -18,17 +19,18 @@ private:
 public:
     std::vector<particle<ntype>> parts; // particles
     std::vector<pvector<ntype,3>> J; // couplings for each particle to + direction
+    randnumgen<ntype, std::mt19937_64> *rng = nullptr;
 
     XYmodel() = default;
 
-    XYmodel(int Lbox): L(Lbox)
+    XYmodel(int Lbox, randnumgen<ntype, std::mt19937_64> *rng_instance): L(Lbox), rng(rng_instance)
     {
         int N = L*L*L;
         parts.resize(N);
         J.resize(N);
         for(int i=0; i<N; i++){
-            parts[i]= particle<ntype>();
-            J[i] = {rng.randn(), rng.randn(), rng.randn()};
+            parts[i]= particle<ntype>(rng);
+            J[i] = {rng->randn(), rng->randn(), rng->randn()};
         }
     }
 
@@ -113,7 +115,7 @@ public:
 
     XYmodel<ntype> make_replica() const
     {  
-        XYmodel<ntype> replica(L);
+        XYmodel<ntype> replica(L, rng);
 
         // Copy bonds
         replica.J = J;
@@ -121,7 +123,7 @@ public:
         // Reinitialize spins
         int N = L*L*L;
         for (int i = 0; i < N; i++)
-            replica.parts[i] = particle<ntype>();
+            replica.parts[i] = particle<ntype>(rng);
 
         return replica;
     }
@@ -145,13 +147,13 @@ public:
         for(int i=0; i<N; i++)
         {   
             ntype eno = energy_particle(i);
-            ntype dtheta = rng.ranf()*d_theta_max - d_theta_max/2.0;
+            ntype dtheta = rng->ranf()*d_theta_max - d_theta_max/2.0;
             parts[i].tra_move_metro(dtheta);
 
             // calculate energy difference
             ntype enn = energy_particle(i);
             ntype delu = enn-eno;
-            ntype xi = rng.ranf();
+            ntype xi = rng->ranf();
             if (delu > 0.0 && xi >= exp(-beta*delu))
             {
                 // reject move

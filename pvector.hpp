@@ -4,7 +4,6 @@
 #include<iostream> // input/output
 #include<cmath>
 #include<string>
-#include "./randnumgen.hpp"
 
 template <typename ntype, int NT>
 class pvector
@@ -310,43 +309,6 @@ public:
       return os;
     }
   
-  // ============== RANDOM VECTORS
-  // generate a random vector inside a box and assign it to (*this) object
-  void random(const ntype& L)
-    {
-      for (int i=0; i < NT; i++)
-        {
-          v[i] = (rng.ranf()-0.5)*L; // assign a random value in [-L/2,L/2]
-        }
-    }
-
-  // generate a random vector on unit sphere and assign it to (*this) object
-  void random_orient(void)
-    {
-      ntype rS, S, V1, V2;
-      if (NT==3)
-        {
-          do
-            {
-              V1 = 2.0*rng.ranf()-1.0;
-              V2 = 2.0*rng.ranf()-1.0;
-              S = V1*V1+V2*V2;
-            }
-          while (S >= 1.0);
-          rS = sqrt(1.0-S);
-#if 0
-          v[0] = 2.0*rS*V1;
-          v[1] = 2.0*rS*V2;
-          v[2] = 1.0-2.0*S;
-#else
-          (*this) = {2.0*rS*V1, 2.0*rS*V2, 1.0-2.0*S};
-#endif
-        }
-      else
-        {
-          std::cout << "[random_orient] Only 3D vectors are supported\n";
-        }
-    }
 };
 
 #endif

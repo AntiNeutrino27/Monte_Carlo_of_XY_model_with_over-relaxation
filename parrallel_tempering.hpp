@@ -17,10 +17,11 @@ public:
     std::vector<ntype> temperatures;
     std::vector<model_type> replicas;
     std::vector<ntype> thetas;
+    randnumgen<ntype, std::mt19937_64> *rng = nullptr;
 
     ModelPT() = default;
 
-    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox, ntype theta_max=0.1)
+    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox, randnumgen<ntype, std::mt19937_64> *rng_instance, ntype theta_max=0.1) : rng(rng_instance)
     {
         init(T_min, T_max, N_T_, Lbox, theta_max);
     }
@@ -42,7 +43,7 @@ public:
         }
 
         // Initialize replicas
-        model_type model1(Lbox);
+        model_type model1(Lbox, rng);
         replicas[0] = model1;
         for(int i=1; i<N_T; i++){
             replicas[i] = model1.make_replica();
@@ -52,7 +53,7 @@ public:
     ModelPT<ntype, model_type> make_copy() const
     {  
         int Lbox = replicas[0].get_L();
-        ModelPT<ntype, model_type> copy(T_min, T_max, N_T, Lbox, theta_max);
+        ModelPT<ntype, model_type> copy(T_min, T_max, N_T, Lbox, rng, theta_max);
 
         // copying bonds
         for(int i=0; i<N_T; i++){
@@ -87,7 +88,7 @@ public:
             ntype E2 = replicas[i+1].total_energy();
             ntype dBeta = 1.0/temperatures[i+1] - 1.0/temperatures[i];
             ntype delta = (E2 - E1) * dBeta;
-            ntype xi = rng.ranf();
+            ntype xi = rng->ranf();
             if(delta < 0.0 && xi >= exp(delta)){
                 rej_counts[i] = 1;
             } 

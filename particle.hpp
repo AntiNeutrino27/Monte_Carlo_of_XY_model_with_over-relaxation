@@ -2,10 +2,12 @@
 #define _PARTICLE_
 
 #include "./pvector.hpp"
+#include "./randnumgen.hpp"
 template<typename ntype>
 class particle
 {
   pvector<ntype,2> sold; 
+  randnumgen<ntype, std::mt19937_64> *rng = nullptr;
 public:
   pvector<ntype,2> s;
  
@@ -37,11 +39,13 @@ public:
       std::cout << "sold=(" << sold.get(0) << "," << sold.get(1) << ")\n";
     }
 
-  particle()
+  particle(randnumgen<ntype, std::mt19937_64> *rng_instance) : rng(rng_instance)
     {
-      ntype theta = 2.*rng.ranf()*M_PI;
+      ntype theta = 2.*rng->ranf()*M_PI;
       s = {cos(theta), sin(theta)};
       store();
     }
+
+  particle () = default;
 };
 #endif 

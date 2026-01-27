@@ -15,13 +15,18 @@
 namespace fs = std::filesystem;
 
 template<typename ntype, typename model_type>
-class sim
+class mcsim
 {
   using simp = simpars<ntype>;
-protected:
+
   simp pars;  // parameters of the simulation
   ModelPT<ntype, model_type> PT_model; // parallel tempering model
   std::string base_path;
+  randnumgen<ntype, std::mt19937_64> &rng;
+  
+  // counters used to calculate acceptance rates
+  long int tot_met, tot_PT;
+  std::vector<long int> rej_counts_met, rej_counts_PT;
 
   void save_mgl_snapshot(long int t) 
   {
@@ -50,30 +55,6 @@ protected:
     return fs::create_directories(dir, ec);
   }
  
-public:
-  void prepare_initial_conf(void) 
-    {
-
-    }
-
-  void run(void) 
-    {
-      // intentionally void
-    }; 
-};
-
-template<typename ntype, typename model_type>
-class mcsim: public sim<ntype, model_type>
-{
-  // for calc_acceptance_and_adjust: total trial moves and accepted ones
-  // for calculating acceptance rates.
-  using bc=sim<ntype, model_type>;
-  using bc::PT_model, bc::pars, bc::save_mgl_snapshot, bc::create_dir, bc::base_path;
-  
-  // counters used to calculate acceptance rates
-  long int tot_met, tot_PT;
-  std::vector<long int> rej_counts_met, rej_counts_PT;
-
   void calc_acceptance_and_adjust(void)
   {
       for(int i=0; i<PT_model.N_T; i++)
@@ -268,6 +249,7 @@ class mcsim: public sim<ntype, model_type>
 
     return true;
   }
+  
   void create_PT_model()
   {
     if(!pars.use_pt)
@@ -275,17 +257,25 @@ class mcsim: public sim<ntype, model_type>
       pars.T_max = pars.T_min;
       pars.N_T = 1;
     }
-    PT_model.init(pars.T_min, pars.T_max, pars.N_T, pars.L, pars.theta_max);
+    PT_model = ModelPT<ntype, model_type>(pars.T_min, pars.T_max, pars.N_T, pars.L, &rng, pars.theta_max);
   }
 
  public:
   mcsim(){
-    base_path = pars.path;
+    base_path = pars.path;  
+    if (pars.seed < 0)
+    {
+      rng.rseed();
+    }
+    else
+    {
+      rng.seed(pars.seed);
+    }
     create_PT_model();
   }
 
-  mcsim(std::string path){
-    base_path = path;
+  mcsim(std::string path, randnumgen<ntype, std::mt19937_64> &rng_instance) : base_path(path), rng(rng_instance)
+  {
     create_PT_model();
   }
 
@@ -304,7 +294,7 @@ class mcsim: public sim<ntype, model_type>
   mcsim<ntype, model_type> clone_system()
   {
     std::string new_path = base_path + "_clone";
-    mcsim<ntype, model_type> new_sim(new_path);
+    mcsim<ntype, model_type> new_sim(new_path, rng);
     new_sim.PT_model = PT_model.make_copy();
     return new_sim;
   }
