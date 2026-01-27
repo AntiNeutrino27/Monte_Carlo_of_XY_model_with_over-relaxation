@@ -16,13 +16,19 @@ int main(int argc, char **argv)
   else
     rng.seed(pars.seed);
   
-  mcsim<double, XYmodel<double>> mc;
-  mc.prepare_initial_conf(); 
-  mcsim<double, XYmodel<double>> mc_clone = mc.clone_system();
-  mc_clone.prepare_initial_conf(); 
-  mc.run();
-  mc_clone.run();
+  std::string path = pars.path;
+  std::string full_path;
 
+  for(int i = 0; i < 10; i++) {
+    full_path = path + std::to_string(i);
+    mcsim<double, XYmodel<double>> mc(full_path);
+    mc.prepare_initial_conf(); 
+    mcsim<double, XYmodel<double>> mc_clone = mc.clone_system();
+    mc_clone.prepare_initial_conf(); 
+    mc.run();
+    mc_clone.run();
+  }
+  
 
   return 0;
 }

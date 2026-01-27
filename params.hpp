@@ -21,21 +21,21 @@ public:
   simpars()
     {
       std::ifstream ri;
-      path = "simulations/simulation4";
-      totsteps = 409600*2;
+      path = "simulations/run1/simulations";
+      totsteps = 40960*2;
       save_mgl_snapshot = 100;
-      mc_step = 1;
+      mc_step = 10;
       T_min = 0.2;
       T_max = 1.4;
       N_T = 27;
       L = 8;
       seed = -1;
       maxadjstps = totsteps;
-      adjstps = 5000;
+      adjstps = 2000;
       savemeasure = 100;
       theta_max = 3.14159265359 * 1./180.;
-      use_or = false;
-      use_pt = false;
+      use_or = true;
+      use_pt = true;
     }
 };
 #endif
