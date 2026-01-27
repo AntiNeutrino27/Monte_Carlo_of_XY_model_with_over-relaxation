@@ -50,7 +50,7 @@ public:
         return {ix, iy, iz};
     }
 
-    int get_L()
+    int get_L() const 
     {
         return L;
     }

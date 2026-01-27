@@ -21,6 +21,7 @@ class sim
 protected:
   simp pars;  // parameters of the simulation
   ModelPT<ntype, model_type> PT_model; // parallel tempering model
+  std::string base_path;
 
   void save_mgl_snapshot(long int t) 
   {
@@ -29,7 +30,7 @@ protected:
       model_type model = PT_model.replicas[i];
       std::fstream f;
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/cnf-" + std::to_string(t) + ".mgl";
+      s = base_path + "/temp_" + std::to_string(i) + "/cnf-" + std::to_string(t) + ".mgl";
       f.open(s, std::ios::out|std::ios::trunc);
       for (int j=0; j < model.get_N(); j++)
       {
@@ -54,14 +55,6 @@ public:
     {
 
     }
- 
-  void init_rng(int n) 
-    {
-      if (n < 0)
-        rng.rseed();
-      else
-        rng.seed(n);
-    }
 
   void run(void) 
     {
@@ -75,7 +68,7 @@ class mcsim: public sim<ntype, model_type>
   // for calc_acceptance_and_adjust: total trial moves and accepted ones
   // for calculating acceptance rates.
   using bc=sim<ntype, model_type>;
-  using bc::PT_model, bc::pars, bc::save_mgl_snapshot, bc::create_dir;
+  using bc::PT_model, bc::pars, bc::save_mgl_snapshot, bc::create_dir, bc::base_path;
   
   // counters used to calculate acceptance rates
   long int tot_met, tot_PT;
@@ -104,7 +97,7 @@ class mcsim: public sim<ntype, model_type>
     for(int i=0; i<PT_model.N_T; i++)
     {
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/energy.dat";
+      s = base_path + "/temp_" + std::to_string(i) + "/energy.dat";
       std::fstream f;
       f.open(s,  std::ios::out|std::ios::trunc);
       f.close();
@@ -113,7 +106,7 @@ class mcsim: public sim<ntype, model_type>
     for(int i=0; i<PT_model.N_T; i++)
     {
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/theta.dat";
+      s = base_path + "/temp_" + std::to_string(i) + "/theta.dat";
       std::fstream f;
       f.open(s,  std::ios::out|std::ios::trunc);
       f.close();
@@ -125,7 +118,7 @@ class mcsim: public sim<ntype, model_type>
     for(int i=0; i<PT_model.N_T; i++)
     {
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/PT_acc_rate.dat";
+      s = base_path + "/temp_" + std::to_string(i) + "/PT_acc_rate.dat";
       std::fstream f;
       f.open(s,  std::ios::out|std::ios::trunc);
       f.close();
@@ -141,7 +134,7 @@ class mcsim: public sim<ntype, model_type>
       ntype totenergy = model.total_energy();
       std::fstream f;
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/energy.dat";
+      s = base_path + "/temp_" + std::to_string(i) + "/energy.dat";
       f.open(s, std::ios::out|std::ios::app);
       // save potential energy per particle
       f << t << " " << totenergy << "\n";
@@ -153,7 +146,7 @@ class mcsim: public sim<ntype, model_type>
       ntype theta = PT_model.thetas[i];
       std::fstream f;
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/theta.dat";
+      s = base_path + "/temp_" + std::to_string(i) + "/theta.dat";
       f.open(s, std::ios::out|std::ios::app);
       // save potential energy per particle
       f << t << " " << theta << "\n";
@@ -168,7 +161,7 @@ class mcsim: public sim<ntype, model_type>
       ntype acc_rate = 1.0 - ((ntype)rej_counts_PT[i])/((ntype)tot_PT);
       std::fstream f;
       std::string s;
-      s = pars.path + "/temp_" + std::to_string(i) + "/PT_acc_rate.dat";
+      s = base_path + "/temp_" + std::to_string(i) + "/PT_acc_rate.dat";
       f.open(s, std::ios::out|std::ios::app);
       // save potential energy per particle
       f << t << " " << acc_rate << "\n";
@@ -217,12 +210,12 @@ class mcsim: public sim<ntype, model_type>
 
   bool create_save_dir()
   {
-    return create_dir(pars.path);
+    return create_dir(base_path);
   }
 
   bool create_temp_dirs()
   {
-    std::string base_dir = pars.path;
+    std::string base_dir = base_path;
     int N_T = pars.N_T;
     for (int i=0; i<N_T; i++)
     {
@@ -235,7 +228,7 @@ class mcsim: public sim<ntype, model_type>
 
   bool write_readme()
   {
-    std::string filename = pars.path + "/README.txt";
+    std::string filename = base_path + "/README.txt";
     std::fstream f;
     f.open(filename, std::ios::out|std::ios::trunc);
     if (!f.is_open())
@@ -250,7 +243,7 @@ class mcsim: public sim<ntype, model_type>
     f << "Use parallel tempering: " << (pars.use_pt ? "yes" : "no") << "\n";
     f << "Number of temperatures: " << pars.N_T << "\n";
     f << "Temperature range: " << pars.T_min << " to " << pars.T_max << "\n";
-    f << "Number of MC steps: " << pars.totsteps << "\n";
+    f << "Total steps: " << pars.totsteps << "\n";
     f << "MC steps period: " << pars.mc_step << "\n";
     f << "Save MGL snapshot every: " << pars.save_mgl_snapshot << "\n";
     f << "Save measures every: " << pars.savemeasure << "\n";
@@ -260,11 +253,22 @@ class mcsim: public sim<ntype, model_type>
     f << "-----------------------------------\n";
 
     f.close();
+
+    std::string Jfile = base_path + "/J.txt";
+    std::fstream g;
+    g.open(Jfile, std::ios::out|std::ios::trunc);
+    if (!g.is_open())
+      return false; 
+    for (int i = 0; i< PT_model.replicas[0].J.size(); i++)
+    {
+      g << PT_model.replicas[0].J[i] << "\n";
+    }
+    g.close();
+
+
     return true;
   }
-
- public:
-  void prepare_initial_conf(void) 
+  void create_PT_model()
   {
     if(!pars.use_pt)
     {
@@ -272,6 +276,21 @@ class mcsim: public sim<ntype, model_type>
       pars.N_T = 1;
     }
     PT_model.init(pars.T_min, pars.T_max, pars.N_T, pars.L, pars.theta_max);
+  }
+
+ public:
+  mcsim(){
+    base_path = pars.path;
+    create_PT_model();
+  }
+
+  mcsim(std::string path){
+    base_path = path;
+    create_PT_model();
+  }
+
+  void prepare_initial_conf(void) 
+  {
     create_save_dir();
     write_readme();
     create_temp_dirs();
@@ -282,11 +301,18 @@ class mcsim: public sim<ntype, model_type>
     restore_rej_count(2);
   }
 
+  mcsim<ntype, model_type> clone_system()
+  {
+    std::string new_path = base_path + "_clone";
+    mcsim<ntype, model_type> new_sim(new_path);
+    new_sim.PT_model = PT_model.make_copy();
+    return new_sim;
+  }
+
   void run(void) 
   {
       // loop over MC steps
       int t;
-      int step = 500;
       tot_met = 0;
       tot_PT = 0;
       std::cout << "Starting MC simulation with Parallel Tempering...\n";
@@ -295,10 +321,10 @@ class mcsim: public sim<ntype, model_type>
       std::cout << "Preparing initial measures...\n";
       init_measures();
       std::cout << "Running simulation...\n";
-      std::cout << pars.totsteps << " MC steps to be performed.\n";
+      std::cout << pars.totsteps << " steps to be performed.\n";
       for (t = 0; t < pars.totsteps; t++)
       {
-        if(pars.use_or && t % 10 == 0)
+        if(pars.use_or)
           PT_model.over_relaxation_sweep();
 
         if (t % pars.mc_step == 0)

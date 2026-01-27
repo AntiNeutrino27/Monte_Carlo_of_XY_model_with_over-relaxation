@@ -13,22 +13,24 @@ class ModelPT
 public:
     ntype T_min, T_max;
     int N_T;
+    ntype theta_max;
     std::vector<ntype> temperatures;
     std::vector<model_type> replicas;
     std::vector<ntype> thetas;
 
     ModelPT() = default;
 
-    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox, float theta_max=0.1)
+    ModelPT(ntype T_min, ntype T_max, int N_T_, int Lbox, ntype theta_max=0.1)
     {
         init(T_min, T_max, N_T_, Lbox, theta_max);
     }
 
-    void init(ntype T_min_, ntype T_max_, int N_T_, int Lbox, float theta_max)
+    void init(ntype T_min_, ntype T_max_, int N_T_, int Lbox, ntype theta_max_)
     {
         T_min = T_min_;
         T_max = T_max_;
         N_T = N_T_;
+        theta_max = theta_max_;
         temperatures.resize(N_T);
         replicas.resize(N_T);
         thetas.resize(N_T);
@@ -50,7 +52,7 @@ public:
     ModelPT<ntype, model_type> make_copy() const
     {  
         int Lbox = replicas[0].get_L();
-        ModelPT<ntype, model_type> copy(T_min, T_max, N_T, Lbox);
+        ModelPT<ntype, model_type> copy(T_min, T_max, N_T, Lbox, theta_max);
 
         // copying bonds
         for(int i=0; i<N_T; i++){
