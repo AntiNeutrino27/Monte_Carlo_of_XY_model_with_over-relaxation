@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams.update({'font.size': 12})
 import math
 
 from scipy.signal import savgol_filter
@@ -13,7 +15,7 @@ def calc_temperatures(T_min, T_max, n_T):
 
 
 if __name__ == "__main__":
-    path = "../run3/simulation0"
+    path = "../simulations/run3/simulation0"
     with open(path + os.sep + "README.txt", encoding='utf-8') as file:
         rm = file.read()
         for line in rm.split("\n"):
@@ -36,7 +38,7 @@ if __name__ == "__main__":
         smoothed = savgol_filter(energies[:, 1], window_length=size, polyorder=2) #* 180/np.pi  # convert to degrees
         plt.plot((energies[:, 0])[size:-size], smoothed[size:-size], label=f"T={temp:.3f}")
         if i == 0:
-            plt.title("Energy vs Monte Carlo Steps for Different Temperatures")
+            # plt.title("Energy vs Monte Carlo Steps for Different Temperatures")
             plt.xlabel("Monte Carlo Steps")
             plt.ylabel("Energy")
 
