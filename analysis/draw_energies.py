@@ -13,7 +13,7 @@ def calc_temperatures(T_min, T_max, n_T):
 
 
 if __name__ == "__main__":
-    path = "../simulations/simulation11"
+    path = "../run3/simulation0"
     with open(path + os.sep + "README.txt", encoding='utf-8') as file:
         rm = file.read()
         for line in rm.split("\n"):
